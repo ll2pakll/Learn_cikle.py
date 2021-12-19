@@ -105,8 +105,11 @@ def ImagetoTensor(imgpath, batch_size, todevice=True):
     return batch_torch
 
 def predict_to_markers(predict, size_img=1920):
-    pred = (predict * size_img).type(torch.int32).to("cpu").numpy()
-    pred = np.ravel(pred).reshape(4, 2)
+    pred = []
+    for i in predict:
+        a = (i * size_img).type(torch.int32).to("cpu").numpy().ravel()
+        pred.append(a)
+    pred = np.array(pred)
     return pred
 
 def save_preduct_in_metadata(img_path, pred):

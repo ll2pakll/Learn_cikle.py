@@ -1,5 +1,5 @@
 import DFLIMG
-from Help_fn.my_model import *
+from Help_fn.my_model_progress import *
 
 batch_size = 1
 epochs = 1
@@ -17,9 +17,9 @@ model = NeuralNetwork().to(device)
 dataloader = DataLoader(data, batch_size=batch_size)
 
 optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
-savepath = 'model_weights.pth'
+wghpath = 'd:\Work Area\Xseg_exstract\weights\model_weights.wgh'
 
-model.load_state_dict(torch.load('model_weights.pth'))
+model.load_state_dict(torch.load(wghpath))
 
 predict_list = test_loop(dataloader, model, loss_fn, make_predict=True)
 
