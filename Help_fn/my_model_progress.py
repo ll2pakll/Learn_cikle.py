@@ -32,8 +32,8 @@ class CustomImageDataset(Dataset):
         image = cv2.imread(img_path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         label = self.img_labels[1][idx]
-        # image, label = augumentator(image, label) #аугументатор надо отключить при получении PRD
-        label = np.float32(label.ravel()) # эту строку надо отключить при обучении сети
+        image, label = augumentator(image, label) #аугументатор надо отключить при получении PRD
+        # label = np.float32(label.ravel()) # эту строку надо отключить при обучении сети
         label = torch.from_numpy(label)
         label /= size_img
         if self.transform:
@@ -114,9 +114,12 @@ def test_loop(dataloader, model, loss_fn, spisok_loss=[1], make_predict=None):
     spisok_loss.append(test_loss_med)
     print(f'loss: {test_loss_med:>5f}')
 
+normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])
+
 transform = transforms.Compose(
     [transforms.ToTensor(),
-     # transforms.Resize(size_img)
+     normalize
      ])
 # anatation = list_marked_filse_names(dir_path)
 # save_picle_file(anatation, 'anatation')
