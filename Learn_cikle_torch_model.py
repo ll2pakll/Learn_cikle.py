@@ -1,26 +1,30 @@
-from Help_fn.my_model_progress import *
+import torch.optim
+
+from Help_fn.torch_model import *
 import matplotlib.pyplot as plt
 import time
 
 
-epochs = 3
-batch_size = 3
+epochs = 1000
+batch_size = 5
 learning_rate = 1e-3
-model_load = True
 
-model = NeuralNetwork().to(device)
-optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+model, input_size, spisok_loss = initialize_model(model_name, num_classes, feature_extract, use_pretrained=True)
+model = model.to(device)
+print(model)
+
+print('слои которые будут обучаться')
+for name,param in model.named_parameters():
+    if param.requires_grad == True:
+        print("\t",name)
+
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 train_dataloader = DataLoader(training_data, batch_size=batch_size, shuffle=True)
 test_dataloader = DataLoader(test_data, batch_size=batch_size)
-spisok_loss_path = 'spisok_loss'
-savepath = 'd:\Work Area\Xseg_exstract\weights\model_weights.wgh'
-
-if model_load:
-    model.load_state_dict(torch.load(savepath))
-    spisok_loss = load_picle_file(spisok_loss_path)
-else:
-    spisok_loss = [0]
 end_counter = epochs
+
+
+print("Params to learn:")
 
 for t in range(epochs):
     spisok_loss[0] += 1
