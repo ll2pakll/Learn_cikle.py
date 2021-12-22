@@ -19,9 +19,10 @@ size_img = 1920
 dir_path = 'd:\Work Area\Xseg_exstract\\frames\\'
 num_classes = 8
 feature_extract = True
-model_name = "squeezenet"
+requires_grad = 12 #количество слоёв снизу нейросети, которые будут обучаться
+model_name = "resnet"
 savepath = savepath = 'd:\Work Area\Xseg_exstract\weights\\' + model_name + '.wgh'
-spisok_loss_path = 'spisok_loss'
+spisok_loss_path = 'd:\Work Area\Xseg_exstract\weights\\' + model_name + '_spisok_loss.pkl'
 
 class CustomImageDataset(Dataset):
     def __init__(self, anatation, img_dir, transform=None, target_transform=None, make_predict=None):
@@ -54,10 +55,15 @@ class CustomImageDataset(Dataset):
             label = self.target_transform(label)
         return image, label
 
-def set_parameter_requires_grad(model, feature_extracting):
+def set_parameter_requires_grad(model, feature_extracting, requires_grad=requires_grad):
     if feature_extracting:
-        for param in model.parameters():
+        param_list = []
+        for name, param in model.named_parameters():
+            param_list.append(param)
             param.requires_grad = False
+        if requires_grad:
+            for param in param_list[-requires_grad*2:]:
+                param.requires_grad = True
 
 def initialize_model(model_name, num_classes, feature_extract, use_pretrained=True):
     # Initialize these variables which will be set in this if statement. Each of these
@@ -72,6 +78,10 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
         set_parameter_requires_grad(model_ft, feature_extract)
         num_ftrs = model_ft.fc.in_features
         model_ft.fc = nn.Linear(num_ftrs, num_classes)
+        input_size = 224
+
+    elif model_name == "yolov5":
+        model_ft = torch.hub.load('ultralytics/yolov5', 'yolov5s', classes=8, device=device)
         input_size = 224
 
     elif model_name == "alexnet":
@@ -130,8 +140,11 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
 
     if os.path.exists(savepath):
         model_ft.load_state_dict(torch.load(savepath))
-        spisok_loss = load_picle_file(spisok_loss_path)
         print(f'веса загружены из {savepath}')
+        try:
+            spisok_loss = load_picle_file(spisok_loss_path)
+        except:
+            spisok_loss = [0]
     else:
         spisok_loss = [0]
 
@@ -144,6 +157,7 @@ def train_loop(dataloader, model, loss_fn, optimizer, spisok_loss=[1]):
         X, y = X.to(device), y.to(device)
         # Compute prediction and loss
         pred = model(X)
+        # print(pred)
         loss = loss_fn(pred, y)
         test_loss[b % 5] = (loss.item())
         b += 1
@@ -182,7 +196,7 @@ normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
 
 transform = transforms.Compose(
     [transforms.ToTensor(),
-     normalize
+     # normalize
      ])
 # anatation = list_marked_filse_names(dir_path)
 # save_picle_file(anatation, 'anatation')
