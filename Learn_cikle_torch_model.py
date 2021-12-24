@@ -23,9 +23,6 @@ train_dataloader = DataLoader(training_data, batch_size=batch_size, shuffle=True
 test_dataloader = DataLoader(test_data, batch_size=batch_size)
 end_counter = epochs
 
-
-print("Params to learn:")
-
 for t in range(epochs):
     spisok_loss[0] += 1
     print(f"Epoch {spisok_loss[0]}\n{end_counter} left")

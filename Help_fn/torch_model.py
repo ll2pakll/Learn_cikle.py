@@ -21,7 +21,7 @@ num_classes = 8
 feature_extract = True
 requires_grad = 12 #количество слоёв снизу нейросети, которые будут обучаться
 model_name = "resnet"
-savepath = savepath = 'd:\Work Area\Xseg_exstract\weights\\' + model_name + '.wgh'
+savepath = 'd:\Work Area\Xseg_exstract\weights\\' + model_name + '.wgh'
 spisok_loss_path = 'd:\Work Area\Xseg_exstract\weights\\' + model_name + '_spisok_loss.pkl'
 
 class CustomImageDataset(Dataset):
