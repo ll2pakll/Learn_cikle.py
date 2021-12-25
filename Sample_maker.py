@@ -126,6 +126,13 @@ class Sample_maker:
     def points_return(self):
         return self.change_points
 
+    def save_sample(self, save_path):
+        cv2.imwrite(save_path, self.change_image)
+        dflimg = DFLIMG.DFLJPG.load(save_path)
+        meta = {'hand_exstract_points': self.change_points}
+        dflimg.set_dict(dict_data=meta)
+        dflimg.save()
+
 def viewImage(image, name_of_window = 'Window'):
     cv2.namedWindow(name_of_window)
     cv2.imshow(name_of_window, image)
@@ -144,6 +151,7 @@ sempler.all_transformations()
 image_cheng = sempler.image_return()
 
 print(sempler.points_return())
-cv2.imwrite(path_write, image_cheng)
+
+sempler.save_sample(path_write)
 
 viewImage(image_cheng)
