@@ -2,9 +2,13 @@ import cv2
 import DFLIMG
 import math
 import albumentations as A
+import pathlib
+import os
+
 
 class Sample_maker:
     def __init__(self, img_path, pad_factor=1, resolution=512, shift_centr_factor=(1, 1), show_points=False):
+        self.img_path = img_path
         self.image = cv2.imread(img_path)
         self.points = DFLIMG.DFLJPG.load(img_path).get_dict()['target'] # потом заменить на predict
         self.change_image = self.image.copy()
@@ -14,7 +18,7 @@ class Sample_maker:
         self.shift_centr_factor = list(shift_centr_factor)
         self.height = int((self.change_points[3][1] - self.change_points[0][1]))
         self.show_points = show_points
-        print(self.change_points)
+        self.name = os.path.basename(img_path)
 
     def all_transformations(self):
         self.rotate().centr().crop().resize()
@@ -25,6 +29,7 @@ class Sample_maker:
         a = self.points[3][0] - self.points[0][0]
         angle = math.degrees(math.atan(a / b))
         return angle
+
     def rotate(self):
         transform = A.Compose([
             A.Affine(rotate=self.make_angle(), p=1),
@@ -126,7 +131,14 @@ class Sample_maker:
     def points_return(self):
         return self.change_points
 
-    def save_sample(self, save_path):
+    def save_sample(self):
+        sempls_folder_path = '\semples\\'
+        folder_path = str(pathlib.Path(self.img_path).parent.absolute())
+        try:
+            os.mkdir(folder_path+sempls_folder_path)
+        except:
+            pass
+        save_path = folder_path+sempls_folder_path+self.name
         cv2.imwrite(save_path, self.change_image)
         dflimg = DFLIMG.DFLJPG.load(save_path)
         meta = {'hand_exstract_points': self.change_points}
@@ -139,19 +151,25 @@ def viewImage(image, name_of_window = 'Window'):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+dir_path = "d:\Work Area\Xseg_exstract\\frames\\"
+file_list = os.listdir(path=dir_path)
+formats_tuple = ('jpg', 'png')
+for i, n in enumerate(file_list):
+    if len(n.split('.')) != 2:
+        file_list.pop(i)
+        break
+    if n.split(('.'))[1] not in formats_tuple:
+        file_list.pop(i)
 
-name_window = 'Window'
-img_path ='d:\Work Area\Xseg_exstract\\frames\\0127.jpg'
-path_write = 'd:\Work Area\Xseg_exstract\\img_test.jpg'
+for n in file_list:
+    img_path =dir_path+n
+    print(img_path)
+    try:
+        sempler = Sample_maker(img_path, pad_factor=1.1, resolution=512, shift_centr_factor=(1.1, 1), show_points=True)
+        sempler.all_transformations()
+        image_cheng = sempler.image_return()
+        sempler.save_sample()
+    except:
+        pass
 
-sempler = Sample_maker(img_path, pad_factor=1.1, resolution=512, shift_centr_factor=(1.1, 1), show_points=True)
-
-sempler.all_transformations()
-
-image_cheng = sempler.image_return()
-
-print(sempler.points_return())
-
-sempler.save_sample(path_write)
-
-viewImage(image_cheng)
+# viewImage(image_cheng)
