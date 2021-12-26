@@ -9,6 +9,64 @@ import albumentations as A
 import cv2
 from matplotlib import pyplot as plt
 
+class Lists_manager:
+    def __init__(self, dir_path):
+        self.dir_path = dir_path
+        self.image_list = image_list(self.dir_path)
+        self.len_image_list = len(self.image_list)
+        self.make_target_list()
+
+    def make_target_list(self):
+        self.marked_list = self.image_list.copy()
+        self.len_target_list = 0
+        for i, n in enumerate(self.image_list):
+            img_path = self.dir_path + n
+            if i % 50 == 0 and i != 0:
+                print(f'{i}/{self.len_image_list}')
+            try:
+                DFLIMG.DFLJPG.load(img_path).get_dict()['target']
+                self.marked_list[i] = [n, True, i]
+                self.len_target_list += 1
+            except:
+                self.marked_list[i] = [n, None, i]
+
+    def get_image_list(self):
+        return self.image_list
+
+    def get_target_list(self):
+        return self.marked_list
+
+    def get_len_image_list(self):
+        return self.len_image_list
+
+    def get_len_target_list(self):
+        return self.len_target_list
+
+    def get_next_mamarked_idx(self, idx):
+        for i, n in enumerate(self.marked_list[idx:]):
+            if n[1] == True and n[2] != idx:
+                print(n)
+                return n[2]
+        return idx
+
+    def previous_mamarked_idx(self, idx):
+        for i, n in enumerate(reversed(self.marked_list[:idx])):
+            if n[1] == True:
+                print(n)
+                return n[2]
+        return idx
+
+
+def image_list(dir_path):
+    file_list = os.listdir(path=dir_path)
+    formats_tuple = ('jpg', 'png')
+    for i, n in enumerate(file_list):
+        if len(n.split('.')) != 2:
+            file_list.pop(i)
+            break
+        if n.split(('.'))[1] not in formats_tuple:
+            file_list.pop(i)
+    return file_list
 
 def dict_marked_filse(dir_path):
     file_list = os.listdir(path=dir_path)
@@ -141,8 +199,8 @@ def augumentator(image, keypoints):
         p=0.8
     )
     transformed = transform(image=image, keypoints=keypoints)
-    # vis_keypoints(transformed['image'], transformed['keypoints'], (0, 255, 0))
-    # plt.show()
+    vis_keypoints(transformed['image'], transformed['keypoints'], (0, 255, 0))
+    plt.show()
     keypoints = []
     for i in transformed['keypoints']:
         for j in i:

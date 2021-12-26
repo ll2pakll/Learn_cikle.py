@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import time
 
 
-epochs = 1000
+epochs = 1
 batch_size = 5
 learning_rate = 1e-3
 

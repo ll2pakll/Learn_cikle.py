@@ -165,7 +165,7 @@ for n in file_list:
     img_path =dir_path+n
     print(img_path)
     try:
-        sempler = Sample_maker(img_path, pad_factor=1.1, resolution=512, shift_centr_factor=(1.1, 1), show_points=True)
+        sempler = Sample_maker(img_path, pad_factor=1.1, resolution=512, shift_centr_factor=(1.1, 1), show_points=None)
         sempler.all_transformations()
         image_cheng = sempler.image_return()
         sempler.save_sample()

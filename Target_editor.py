@@ -2,17 +2,20 @@ import cv2
 import DFLIMG
 import numpy as np
 import os
-from Help_fn.mydef import dict_marked_filse, next_index
+from Help_fn.torch_model import *
 import time
 
 class PointsCreator():
     def __init__(self, dir_path, alpha=0.5, marker_radius=10):
         self.alpha = alpha
         self.marker_radius = marker_radius
+        self.dir_path = dir_path
         #-----------------------------
-        self.file_list, \
-        self.len_file_list, \
-        self.marked_file_list = dict_marked_filse(dir_path)
+        self.list_manager = Lists_manager(self.dir_path)
+        # -----------------------------
+        self.file_list = self.list_manager.get_image_list()
+        self.len_file_list = self.list_manager.get_len_image_list()
+        self.marked_file_list = self.list_manager.get_target_list()
         self.default_marker = np.array([[0, 0]]*4, np.int32)
         self.wnd_name = 'Main'
         #-----------------------------
@@ -61,11 +64,12 @@ class PointsCreator():
             self.markers[self.marker_nmr] = [x, y]
             self.draw_pts()
             self.marker_nmr = (self.marker_nmr + 1) % 4
+
     def keyboard_handler(self):
         self.key = cv2.waitKey(1)
         if 48 < self.key < 53:
             self.marker_nmr = (self.key-49)
-        elif self.key in {1, 4, 97, 100}:
+        elif self.key in {1, 4, 97, 100}: # 1 = 'Ctrl+a', 4 = 'Ctrl+d'
             self.cheng_nmb_img()
         elif self.key == 9:
             self.make_inf_bar()
@@ -76,6 +80,7 @@ class PointsCreator():
             self.make_inf_bar()
         elif self.key == 27:
             self.is_render = False
+
     def read_metadata(self):
         self.marker_nmr = 0
         dflimg = DFLIMG.DFLJPG.load(self.img_path)
@@ -100,12 +105,8 @@ class PointsCreator():
                 meta = {'target': self.markers}
             dflimg.set_dict(dict_data=meta)
             dflimg.save()
-            if self.file_index not in self.marked_file_list:
-                marked_index = next_index(self.file_index, self.marked_file_list)
-                if self.file_index == marked_index:
-                    self.marked_file_list.append(self.file_index)
-                else:
-                    self.marked_file_list.insert(marked_index, self.file_index)
+            if self.marked_file_list[self.file_index][1] == None:
+                self.marked_file_list[self.file_index][1] == True
             print(f'metadata write in {self.file_list[self.file_index]}:\n{self.markers}')
         else:
             print(f'The {self.file_list[self.file_index]} is not marked')
@@ -133,11 +134,12 @@ class PointsCreator():
             index_cheng = -1
             while cv2.waitKey(1) == 97:
                 index_cheng -= 1
-        elif self.key == 4:
-            index_cheng = next_index(self.file_index, self.marked_file_list, next=True)
+        elif self.key == 4: # 4 = 'Ctrl+d'
+            index_cheng = self.list_manager.get_next_mamarked_idx(self.file_index)
+            print(index_cheng)
             self.file_index = 0
-        elif self.key == 1:
-            index_cheng = next_index(self.file_index, self.marked_file_list, previous=True)
+        elif self.key == 1: # 1 = 'Ctrl+a'
+            index_cheng = self.list_manager.previous_mamarked_idx(self.file_index)
             self.file_index = 0
         new_index = self.file_index + index_cheng
         if 0 <= new_index < self.len_file_list:
