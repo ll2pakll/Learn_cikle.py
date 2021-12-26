@@ -91,13 +91,6 @@ class Inter_points:
         step = (self.next_points - self.previous_points)/range
         number_of_steps = self.idx - self.previous_idx
         self.inter_points = self.previous_points + step*number_of_steps
-        # print(f'предыдущая точка - {self.previous_points[0][0]}')
-        # print(f'range - {range}')
-        # print(f'step - {step[0]}')
-        # print(f'текущая точка - {self.inter_points[0][0]}')
-        # print(f'number_of_steps - {number_of_steps}')
-        # print(step*number_of_steps)
-        # print(f'следующая точка - {self.next_points[0][0]}')
         return np.int16(self.inter_points)
 
     def set_previous_points(self, marker):

@@ -10,7 +10,7 @@ class Sample_maker:
     def __init__(self, img_path, pad_factor=1, resolution=512, shift_centr_factor=(1, 1), show_points=False):
         self.img_path = img_path
         self.image = cv2.imread(img_path)
-        self.points = DFLIMG.DFLJPG.load(img_path).get_dict()['target'] # потом заменить на predict
+        self.points = DFLIMG.DFLJPG.load(img_path).get_dict()['inter_points'] # потом заменить на predict
         self.change_image = self.image.copy()
         self.change_points = self.points.copy()
         self.pad_factor = pad_factor
@@ -162,7 +162,7 @@ for i, n in enumerate(file_list):
         file_list.pop(i)
 
 for n in file_list:
-    img_path =dir_path+n
+    img_path = dir_path + n
     print(img_path)
     try:
         sempler = Sample_maker(img_path, pad_factor=1.1, resolution=512, shift_centr_factor=(1.1, 1), show_points=None)
