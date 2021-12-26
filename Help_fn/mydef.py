@@ -42,20 +42,85 @@ class Lists_manager:
     def get_len_target_list(self):
         return self.len_target_list
 
-    def get_next_mamarked_idx(self, idx):
+    def get_next_marked_idx(self, idx):
         for i, n in enumerate(self.marked_list[idx:]):
             if n[1] == True and n[2] != idx:
-                print(n)
                 return n[2]
         return idx
 
-    def previous_mamarked_idx(self, idx):
+    def get_previous_marked_idx(self, idx):
         for i, n in enumerate(reversed(self.marked_list[:idx])):
             if n[1] == True:
-                print(n)
                 return n[2]
         return idx
 
+    def get_path_file(self, x):
+        if x is int:
+            return self.dir_path + self.image_list[x]
+        if x is str:
+            return self.dir_path + x
+
+    def set_marked_fale_True(self, idx):
+        self.marked_list[idx][1] = True
+
+    def set_marked_fale_None(self, idx):
+        self.marked_list[idx][1] = None
+
+
+class Inter_points:
+    def __init__(self, idx, previous_idx, next_idx, marker, dir_path, file_list):
+        self.dir_path = dir_path
+        self.file_list = file_list
+        self.set_data(idx, previous_idx, next_idx, marker)
+
+
+    def set_data(self, idx, previous_idx, next_idx, marker):
+        self.previous_idx = previous_idx
+        self.next_idx = next_idx
+        self.idx = idx
+        self.set_previous_points(marker)
+        self.set_next_points()
+
+
+    def get_points_from_image(self, idx):
+        dflimg = DFLIMG.DFLJPG.load(self.dir_path+self.file_list[idx])
+        return dflimg.get_dict()['target']
+
+    def get_points(self):
+        range = self.next_idx - self.previous_idx
+        step = (self.next_points - self.previous_points)/range
+        number_of_steps = self.idx - self.previous_idx
+        self.inter_points = self.previous_points + step*number_of_steps
+        # print(f'предыдущая точка - {self.previous_points[0][0]}')
+        # print(f'range - {range}')
+        # print(f'step - {step[0]}')
+        # print(f'текущая точка - {self.inter_points[0][0]}')
+        # print(f'number_of_steps - {number_of_steps}')
+        # print(step*number_of_steps)
+        # print(f'следующая точка - {self.next_points[0][0]}')
+        return np.int16(self.inter_points)
+
+    def set_previous_points(self, marker):
+        if marker.any():
+            self.previous_points = marker
+            self.previous_idx = self.idx
+        else:
+            try:
+                self.previous_points = self.get_points_from_image(self.previous_idx)
+            except:
+                try:
+                    self.previous_points = self.get_points_from_image(self.next_idx)
+                except:
+                    self.previous_points = np.array([[0, 0]]*4, np.int32)
+
+    def set_next_points(self):
+        try:
+            self.next_points = self.get_points_from_image(self.next_idx)
+        except:
+            try:
+                self.next_points = self.get_points_from_image(self.previous_idx)
+            except:
+                self.next_points = np.array([[0, 0]]*4, np.int32)
 
 def image_list(dir_path):
     file_list = os.listdir(path=dir_path)
@@ -125,21 +190,6 @@ def list_marked_filse_names(dir_path, all_files=None):
     else:
         print(f'find {len(file_names)}/{len_file_list} marked fils' )
     return (file_names, targets)
-
-def next_index(index, list, next = None, previous=None):
-    if previous:
-        for ind in reversed(list):
-            if index > ind:
-                return ind
-    elif next:
-        for ind in list:
-            if index < ind:
-                return ind
-    else:
-        for i, ind in enumerate(list):
-            if index < ind:
-                return i
-    return index
 
 def save_picle_file(obgect, path):
     with open(path, 'wb') as f:

@@ -21,9 +21,17 @@ class PointsCreator():
         #-----------------------------
         self.file_index = 0
         self.is_render = True
-        self.show_inf_bar = True
-        self.show_prd = 0
+        # -----------------------------
+        self.show_mod = 0 # 0 - 'minual', 1 = 'prd', 2 = 'inter_points'
+        self.show_inf_bar = 1
         #-----------------------------
+        self.inter_points = Inter_points(self.file_index,
+                                         self.list_manager.get_previous_marked_idx(self.file_index),
+                                         self.list_manager.get_next_marked_idx(self.file_index),
+                                         self.default_marker,
+                                         self.dir_path,
+                                         self.file_list)
+        # -----------------------------
         cv2.namedWindow(self.wnd_name)
         cv2.setMouseCallback(self.wnd_name, self.mouse_callback)
 
@@ -42,15 +50,25 @@ class PointsCreator():
         self.img = cv2.imread(self.img_path)
         self.img_view = self.img.copy()
         self.read_metadata()
+        if self.show_mod == 2:
+            self.inter_points.set_data(self.file_index,
+                                       self.list_manager.get_previous_marked_idx(self.file_index),
+                                       self.list_manager.get_next_marked_idx(self.file_index),
+                                       self.markers)
         self.make_inf_bar()
 
     def draw_pts(self):
         img = self.img.copy()
         overlay = img.copy()
         colors = [[0, 255, 255], [255, 0, 0], [0, 0, 255], [0, 255, 0]]
-        if self.show_prd:
+        if self.show_mod == 1:
+            self.alpha = 0.5
             render_points = self.prd
+        elif self.show_mod == 2 and not self.markers.any():
+            self.alpha = 0.4
+            render_points = self.inter_points.get_points()
         else:
+            self.alpha = 0.5
             render_points = self.markers
         for i, point in enumerate(render_points):
             if point.any():
@@ -61,23 +79,29 @@ class PointsCreator():
 
     def mouse_callback(self, ev, x, y, flags, param):
         if ev == cv2.EVENT_LBUTTONUP:
+            if self.show_mod == 2 and not self.markers.any():
+                self.save_inter_points()
+                self.show_mod = 0
             self.markers[self.marker_nmr] = [x, y]
-            self.draw_pts()
+            self.make_inf_bar()
             self.marker_nmr = (self.marker_nmr + 1) % 4
 
     def keyboard_handler(self):
         self.key = cv2.waitKey(1)
         if 48 < self.key < 53:
             self.marker_nmr = (self.key-49)
-        elif self.key in {1, 4, 97, 100}: # 1 = 'Ctrl+a', 4 = 'Ctrl+d'
+        elif self.key in {1, 4, 97, 100}: # 1 = 'Ctrl+a', 4 = 'Ctrl+d', 97 = 'a', 100 = 'd'
             self.cheng_nmb_img()
         elif self.key == 9:
             self.make_inf_bar()
         elif self.key == 8:
             self.del_metadata()
-        elif self.key == 114:
-            self.show_prd = (self.show_prd + 1) % 2
+        elif self.key == 114: # 'r'
+            self.show_mod = (self.show_mod + 1) % 3
             self.make_inf_bar()
+        elif self.key == 115: # 's'
+            self.save_inter_points()
+            self.draw_pts()
         elif self.key == 27:
             self.is_render = False
 
@@ -93,7 +117,6 @@ class PointsCreator():
             self.prd = dflimg.get_dict()['predict']
         except:
             pass
-        self.draw_pts()
 
     def write_metadata(self):
         if self.markers.any():
@@ -105,8 +128,7 @@ class PointsCreator():
                 meta = {'target': self.markers}
             dflimg.set_dict(dict_data=meta)
             dflimg.save()
-            if self.marked_file_list[self.file_index][1] == None:
-                self.marked_file_list[self.file_index][1] == True
+            self.list_manager.set_marked_fale_True(self.file_index)
             print(f'metadata write in {self.file_list[self.file_index]}:\n{self.markers}')
         else:
             print(f'The {self.file_list[self.file_index]} is not marked')
@@ -122,7 +144,12 @@ class PointsCreator():
         self.markers = self.default_marker.copy()
         self.draw_pts()
         self.marker_nmr = 0
+        self.list_manager.set_marked_fale_None(self.file_index)
         print('metadata is deleted')
+
+    def save_inter_points(self):
+        self.markers = self.inter_points.get_points()
+        print('Inter points save in keypoints')
 
     def cheng_nmb_img(self):
         self.write_metadata()
@@ -135,11 +162,10 @@ class PointsCreator():
             while cv2.waitKey(1) == 97:
                 index_cheng -= 1
         elif self.key == 4: # 4 = 'Ctrl+d'
-            index_cheng = self.list_manager.get_next_mamarked_idx(self.file_index)
-            print(index_cheng)
+            index_cheng = self.list_manager.get_next_marked_idx(self.file_index)
             self.file_index = 0
         elif self.key == 1: # 1 = 'Ctrl+a'
-            index_cheng = self.list_manager.previous_mamarked_idx(self.file_index)
+            index_cheng = self.list_manager.get_previous_marked_idx(self.file_index)
             self.file_index = 0
         new_index = self.file_index + index_cheng
         if 0 <= new_index < self.len_file_list:
@@ -157,11 +183,8 @@ class PointsCreator():
 
     def make_inf_bar(self):
         try:
-            if self.key == 9:
-                if self.show_inf_bar:
-                    self.show_inf_bar = None
-                else:
-                    self.show_inf_bar = True
+            if self.key == 9: # 9 - 'Tab'
+                self.show_inf_bar = (self.show_inf_bar + 1) % 2
         except:
             pass
         if self.show_inf_bar:
@@ -176,9 +199,11 @@ class PointsCreator():
             for i in inf_data:
                 coords[1] += shift
                 cv2.putText(self.img, i, (coords[0]+offset, coords[1]), cv2.FONT_HERSHEY_SIMPLEX, text_size, text_color, 1)
-            if self.show_prd:
-                coords[1] += shift
-                cv2.putText(self.img, 'prd', (coords[0] + offset, coords[1]), cv2.FONT_HERSHEY_SIMPLEX, text_size, text_color, 1)
+
+            show_mod_names = ('target', 'prd', 'Inter')
+            coords[1] += shift
+            cv2.putText(self.img, show_mod_names[self.show_mod], (coords[0] + offset, coords[1]), cv2.FONT_HERSHEY_SIMPLEX, text_size, text_color, 1)
+
             self.draw_pts()
         else:
             self.img = cv2.imread(self.img_path)
