@@ -8,6 +8,11 @@ import numpy as np
 import albumentations as A
 import cv2
 from matplotlib import pyplot as plt
+from Global.global_variables import *
+from torch import nn
+from torch.utils.data import Dataset
+from torchvision import models, transforms
+from torch.utils.data import DataLoader
 
 class Lists_manager:
     def __init__(self, dir_path):
@@ -24,7 +29,7 @@ class Lists_manager:
             if i % 50 == 0 and i != 0:
                 print(f'{i}/{self.len_image_list}')
             try:
-                DFLIMG.DFLJPG.load(img_path).get_dict()['target']
+                DFLIMG.DFLJPG.load(img_path).get_dict()['keypoints']
                 self.marked_list[i] = [n, True, i]
                 self.len_target_list += 1
             except:
@@ -69,11 +74,12 @@ class Lists_manager:
 
 class Inter_points:
     default_marker = np.array([[0, 0]] * 4, np.int32)
-    def __init__(self, idx, file_list, dir_path, previous_idx=None, next_idx=None, marker=default_marker):
+    def __init__(self, idx, file_list, dir_path=dir_path, previous_idx=None, next_idx=None, marker=default_marker):
         self.dir_path = dir_path
         self.file_list = file_list
         self.default_marker = Inter_points.default_marker
         self.set_data(idx, previous_idx, next_idx, marker)
+        self.mod = 'keypoints'
 
     def set_data(self, idx, previous_idx, next_idx, marker):
         self.previous_idx = previous_idx
@@ -83,9 +89,30 @@ class Inter_points:
         self.set_next_points()
 
 
-    def get_points_from_image(self, idx):
+    def get_points_from_image(self, idx=None):
+        if idx == None:
+            idx = self.idx
         dflimg = DFLIMG.DFLJPG.load(self.dir_path+self.file_list[idx])
-        return dflimg.get_dict()['target']
+        return dflimg.get_dict()[self.mod]
+
+    def get_meta_from_image(self, idx=None):
+        if idx == None:
+            idx = self.idx
+        dflimg = DFLIMG.DFLJPG.load(self.dir_path+self.file_list[idx])
+        return dflimg.get_dict()
+
+    def save_point_in_image(self, idx=None):
+        if idx == None:
+            idx = self.idx
+        save_mod = self.mod + '_inter'
+        dflimg = DFLIMG.DFLJPG.load(self.dir_path + self.file_list[idx])
+        meta = dflimg.get_dict()
+        try:
+            meta[save_mod] = self.get_points()
+        except:
+            meta = {save_mod: self.get_points()}
+        dflimg.set_dict(dict_data=meta)
+        dflimg.save()
 
     def get_points(self):
         if (self.next_points == self.previous_points).all():
@@ -120,7 +147,7 @@ class Inter_points:
             except:
                 self.next_points = self.default_marker
 
-def image_list(dir_path):
+def image_list(dir_path=dir_path):
     file_list = os.listdir(path=dir_path)
     formats_tuple = ('jpg', 'png')
     for i, n in enumerate(file_list):

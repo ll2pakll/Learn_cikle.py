@@ -1,9 +1,4 @@
-import cv2
-import DFLIMG
-import numpy as np
-import os
-from Help_fn.torch_model import *
-import time
+from Help_fn.mydef import *
 
 class PointsCreator():
     def __init__(self, dir_path, alpha=0.5, marker_radius=10):
@@ -22,7 +17,7 @@ class PointsCreator():
         self.file_index = 0
         self.is_render = True
         # -----------------------------
-        self.show_mod = 0 # 0 - 'minual', 1 = 'prd', 2 = 'inter_points'
+        self.show_mod = 0 # 0 - 'minual', 1 = 'inter_points', 2 = 'prd', 3 = predict_inter
         self.show_inf_bar = 1
         #-----------------------------
         self.inter_points = Inter_points(idx=self.file_index,
@@ -42,7 +37,7 @@ class PointsCreator():
             self.keyboard_handler()
         cv2.destroyAllWindows()
         self.write_metadata()
-        print(f'{len(self.marked_file_list)} images were labeled')
+        # print(f'{len(self.marked_file_list)} images were labeled')
 
     def file_data_crate(self):
         self.file_name = self.file_list[self.file_index]
@@ -50,7 +45,7 @@ class PointsCreator():
         self.img = cv2.imread(self.img_path)
         self.img_view = self.img.copy()
         self.read_metadata()
-        if self.show_mod == 2:
+        if self.show_mod == 1:
             self.inter_points.set_data(idx=self.file_index,
                                        previous_idx=self.list_manager.get_previous_marked_idx(self.file_index),
                                        next_idx=self.list_manager.get_next_marked_idx(self.file_index),
@@ -62,11 +57,14 @@ class PointsCreator():
         overlay = img.copy()
         colors = [[0, 255, 255], [255, 0, 0], [0, 0, 255], [0, 255, 0]]
         if self.show_mod == 1:
-            self.alpha = 0.5
-            render_points = self.prd
-        elif self.show_mod == 2 and not self.markers.any():
             self.alpha = 0.4
             render_points = self.inter_points.get_points()
+        elif self.show_mod == 2 and not self.markers.any():
+            self.alpha = 0.5
+            render_points = self.prd
+        elif self.show_mod == 3:
+            self.alpha = 0.5
+            render_points = self.prd_inter
         else:
             self.alpha = 0.5
             render_points = self.markers
@@ -97,7 +95,7 @@ class PointsCreator():
         elif self.key == 8:
             self.del_metadata()
         elif self.key == 114: # 'r'
-            self.show_mod = (self.show_mod + 1) % 3
+            self.show_mod = (self.show_mod + 1) % 4
             self.make_inf_bar()
         elif self.key == 115: # 's'
             self.save_inter_points()
@@ -110,11 +108,15 @@ class PointsCreator():
         dflimg = DFLIMG.DFLJPG.load(self.img_path)
         self.markers = self.prd = self.default_marker.copy()
         try:
-            self.markers = dflimg.get_dict()['target']
+            self.markers = dflimg.get_dict()['keypoints']
         except:
             pass
         try:
-            self.prd = dflimg.get_dict()['predict']
+            self.prd = np.int16(dflimg.get_dict()['predict'])
+        except:
+            pass
+        try:
+            self.prd_inter = np.int16(dflimg.get_dict()['predict_inter'])
         except:
             pass
 
@@ -123,9 +125,9 @@ class PointsCreator():
             dflimg = DFLIMG.DFLJPG.load(self.img_path)
             meta = dflimg.get_dict()
             try:
-                meta['target'] = self.markers
+                meta['keypoints'] = self.markers
             except:
-                meta = {'target': self.markers}
+                meta = {'keypoints': self.markers}
             dflimg.set_dict(dict_data=meta)
             dflimg.save()
             self.list_manager.set_marked_fale_True(self.file_index)
@@ -200,7 +202,7 @@ class PointsCreator():
                 coords[1] += shift
                 cv2.putText(self.img, i, (coords[0]+offset, coords[1]), cv2.FONT_HERSHEY_SIMPLEX, text_size, text_color, 1)
 
-            show_mod_names = ('target', 'prd', 'Inter')
+            show_mod_names = ('target', 'Inter', 'prd', 'prd_inter')
             coords[1] += shift
             cv2.putText(self.img, show_mod_names[self.show_mod], (coords[0] + offset, coords[1]), cv2.FONT_HERSHEY_SIMPLEX, text_size, text_color, 1)
 
@@ -208,6 +210,6 @@ class PointsCreator():
         else:
             self.img = cv2.imread(self.img_path)
             self.draw_pts()
-dir_path = 'd:\Work Area\Xseg_exstract\\frames\\'
+
 Creator = PointsCreator(dir_path)
-points = Creator.start()
+Creator.start()

@@ -1,13 +1,6 @@
-import numpy as np
-from torch.utils.data import Dataset
-import torch.nn.functional as F
-from PIL import Image
-from torch import nn
-import torch
-from torch.utils.data import DataLoader
-import torchvision.transforms as transforms
 from Help_fn.mydef import *
-from torchvision import models, transforms
+from Global.global_variables import *
+
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -16,7 +9,6 @@ print(f'Using {device} device')
 loss_fn = nn.MSELoss()
 size_img = 1920
 
-dir_path = 'd:\Work Area\Xseg_exstract\\frames\\'
 num_classes = 8
 feature_extract = True
 requires_grad = 12 #количество слоёв снизу нейросети, которые будут обучаться
