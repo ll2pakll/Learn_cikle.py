@@ -141,7 +141,7 @@ class Sample_maker:
         save_path = folder_path+sempls_folder_path+self.name
         cv2.imwrite(save_path, self.change_image)
         dflimg = DFLIMG.DFLJPG.load(save_path)
-        meta = {'hand_exstract_points': self.change_points}
+        meta = {'sempl_points': self.change_points, 'original_points':self.points}
         dflimg.set_dict(dict_data=meta)
         dflimg.save()
 

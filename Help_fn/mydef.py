@@ -68,11 +68,12 @@ class Lists_manager:
 
 
 class Inter_points:
-    def __init__(self, idx, previous_idx, next_idx, marker, dir_path, file_list):
+    default_marker = np.array([[0, 0]] * 4, np.int32)
+    def __init__(self, idx, file_list, dir_path, previous_idx=None, next_idx=None, marker=default_marker):
         self.dir_path = dir_path
         self.file_list = file_list
+        self.default_marker = Inter_points.default_marker
         self.set_data(idx, previous_idx, next_idx, marker)
-
 
     def set_data(self, idx, previous_idx, next_idx, marker):
         self.previous_idx = previous_idx
@@ -87,11 +88,15 @@ class Inter_points:
         return dflimg.get_dict()['target']
 
     def get_points(self):
-        range = self.next_idx - self.previous_idx
-        step = (self.next_points - self.previous_points)/range
-        number_of_steps = self.idx - self.previous_idx
-        self.inter_points = self.previous_points + step*number_of_steps
-        return np.int16(self.inter_points)
+        if (self.next_points == self.previous_points).all():
+            return self.previous_points
+
+        else:
+            range = self.next_idx - self.previous_idx
+            step = (self.next_points - self.previous_points)/range
+            number_of_steps = self.idx - self.previous_idx
+            self.inter_points = self.previous_points + step*number_of_steps
+            return np.int16(self.inter_points)
 
     def set_previous_points(self, marker):
         if marker.any():
@@ -104,7 +109,7 @@ class Inter_points:
                 try:
                     self.previous_points = self.get_points_from_image(self.next_idx)
                 except:
-                    self.previous_points = np.array([[0, 0]]*4, np.int32)
+                    self.previous_points = self.default_marker
 
     def set_next_points(self):
         try:
@@ -113,17 +118,18 @@ class Inter_points:
             try:
                 self.next_points = self.get_points_from_image(self.previous_idx)
             except:
-                self.next_points = np.array([[0, 0]]*4, np.int32)
+                self.next_points = self.default_marker
 
 def image_list(dir_path):
     file_list = os.listdir(path=dir_path)
     formats_tuple = ('jpg', 'png')
     for i, n in enumerate(file_list):
         if len(n.split('.')) != 2:
-            file_list.pop(i)
-            break
+            file_list[i] = None
+            continue
         if n.split(('.'))[1] not in formats_tuple:
-            file_list.pop(i)
+            file_list[i] = None
+    file_list = list(filter(lambda a: a != None, file_list))
     return file_list
 
 def dict_marked_filse(dir_path):

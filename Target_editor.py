@@ -25,12 +25,12 @@ class PointsCreator():
         self.show_mod = 0 # 0 - 'minual', 1 = 'prd', 2 = 'inter_points'
         self.show_inf_bar = 1
         #-----------------------------
-        self.inter_points = Inter_points(self.file_index,
-                                         self.list_manager.get_previous_marked_idx(self.file_index),
-                                         self.list_manager.get_next_marked_idx(self.file_index),
-                                         self.default_marker,
-                                         self.dir_path,
-                                         self.file_list)
+        self.inter_points = Inter_points(idx=self.file_index,
+                                         file_list=self.file_list,
+                                         dir_path=self.dir_path,
+                                         previous_idx=self.list_manager.get_previous_marked_idx(self.file_index),
+                                         next_idx= self.list_manager.get_next_marked_idx(self.file_index)
+                                         )
         # -----------------------------
         cv2.namedWindow(self.wnd_name)
         cv2.setMouseCallback(self.wnd_name, self.mouse_callback)
@@ -51,10 +51,10 @@ class PointsCreator():
         self.img_view = self.img.copy()
         self.read_metadata()
         if self.show_mod == 2:
-            self.inter_points.set_data(self.file_index,
-                                       self.list_manager.get_previous_marked_idx(self.file_index),
-                                       self.list_manager.get_next_marked_idx(self.file_index),
-                                       self.markers)
+            self.inter_points.set_data(idx=self.file_index,
+                                       previous_idx=self.list_manager.get_previous_marked_idx(self.file_index),
+                                       next_idx=self.list_manager.get_next_marked_idx(self.file_index),
+                                       marker=self.markers)
         self.make_inf_bar()
 
     def draw_pts(self):
@@ -129,9 +129,9 @@ class PointsCreator():
             dflimg.set_dict(dict_data=meta)
             dflimg.save()
             self.list_manager.set_marked_fale_True(self.file_index)
-            print(f'metadata write in {self.file_list[self.file_index]}:\n{self.markers}')
-        else:
-            print(f'The {self.file_list[self.file_index]} is not marked')
+        #     print(f'metadata write in {self.file_list[self.file_index]}:\n{self.markers}')
+        # else:
+        #     print(f'The {self.file_list[self.file_index]} is not marked')
 
     def del_metadata(self):
         dflimg = DFLIMG.DFLJPG.load(self.img_path)
