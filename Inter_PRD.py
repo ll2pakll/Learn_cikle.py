@@ -10,6 +10,7 @@ class Inter_points_prd(Inter_points):
         self.step = step
         self.mod = 'predict'
         self.target_shift_factor = shift_factor
+        self.save_mod = self.mod + '_inter'
 
     def set_data(self, idx):
         if self.step <= idx < (self.file_list_len - self.step):
@@ -20,8 +21,22 @@ class Inter_points_prd(Inter_points):
             self.next_idx = idx
 
         self.idx = idx
-        self.previous_points = self.get_points_from_image(self.previous_idx)
-        self.next_points = self.get_points_from_image(self.next_idx)
+        if self.previous_idx:
+            self.previous_points = self.get_points_from_image(idx=self.previous_idx, try_get_inter=True)
+        else:
+            self.previous_points = self.get_points_from_image(idx=self.previous_idx)
+        self.next_points = self.get_points_from_image(idx=self.next_idx)
+
+    def get_points_from_image(self, idx=None, try_get_inter=None):
+        if idx == None:
+            idx = self.idx
+        dflimg = DFLIMG.DFLJPG.load(self.dir_path+self.file_list[idx])
+        if try_get_inter:
+            try:
+                return dflimg.get_dict()[self.save_mod]
+            except:
+                pass
+        return dflimg.get_dict()[self.mod]
 
     def shift_factor(self):
         height_prev = int(max([(self.previous_points[3][1] - self.previous_points[0][1]),
@@ -36,24 +51,23 @@ class Inter_points_prd(Inter_points):
     def save_point_in_image(self, idx=None):
         if idx == None:
             idx = self.idx
-        save_mod = self.mod + '_inter'
         dflimg = DFLIMG.DFLJPG.load(self.dir_path + self.file_list[idx])
         meta = dflimg.get_dict()
         if self.shift_factor() < self.target_shift_factor:
             try:
-                meta[save_mod] = self.get_points()
+                meta[self.save_mod] = self.get_points()
             except:
-                meta = {save_mod: self.get_points()}
+                meta = {self.save_mod: self.get_points()}
         else:
             try:
-                meta[save_mod] = meta[self.mod].copy()
+                meta[self.save_mod] = meta[self.mod].copy()
             except:
-                meta = {save_mod: meta[self.mod].copy()}
+                meta = {self.save_mod: meta[self.mod].copy()}
         dflimg.set_dict(dict_data=meta)
         dflimg.save()
 
 
-inter_points_prd = Inter_points_prd(step=2)
+inter_points_prd = Inter_points_prd(step=1)
 
 for i in range(inter_points_prd.file_list_len):
     if i % 50 == 0 and i:
