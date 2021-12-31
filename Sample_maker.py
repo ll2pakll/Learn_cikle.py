@@ -4,19 +4,22 @@ import math
 import albumentations as A
 import pathlib
 import os
+from Help_fn.mydef import *
 
 
 class Sample_maker:
-    def __init__(self, img_path, pad_factor=1, resolution=512, shift_centr_factor=(1, 1), show_points=False):
+    def __init__(self, img_path, pad_factor=1, resolution=512, shift_centr_factor=(1, 1), show_points=False, mod='inter_points'):
         self.img_path = img_path
         self.image = cv2.imread(img_path)
-        self.points = DFLIMG.DFLJPG.load(img_path).get_dict()['inter_points'] # потом заменить на predict
+        self.mod = mod
+        self.points = DFLIMG.DFLJPG.load(img_path).get_dict()[self.mod]
         self.change_image = self.image.copy()
         self.change_points = self.points.copy()
         self.pad_factor = pad_factor
         self.resolution = resolution
         self.shift_centr_factor = list(shift_centr_factor)
-        self.height = int((self.change_points[3][1] - self.change_points[0][1]))
+        self.height = int(max([(self.change_points[3][1] - self.change_points[0][1]),
+                           (self.change_points[3][0] - self.change_points[0][0])]))
         self.show_points = show_points
         self.name = os.path.basename(img_path)
 
@@ -151,25 +154,22 @@ def viewImage(image, name_of_window = 'Window'):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-dir_path = "d:\Work Area\Xseg_exstract\\frames\\"
-file_list = os.listdir(path=dir_path)
-formats_tuple = ('jpg', 'png')
-for i, n in enumerate(file_list):
-    if len(n.split('.')) != 2:
-        file_list.pop(i)
-        break
-    if n.split(('.'))[1] not in formats_tuple:
-        file_list.pop(i)
+file_list = image_list()
 
 for n in file_list:
     img_path = dir_path + n
     print(img_path)
     try:
-        sempler = Sample_maker(img_path, pad_factor=1.1, resolution=512, shift_centr_factor=(1.1, 1), show_points=None)
+        sempler = Sample_maker(img_path,
+                               pad_factor=1.1,
+                               resolution=512,
+                               shift_centr_factor=(1.1, 1),
+                               show_points=True,
+                               mod='predict')
         sempler.all_transformations()
         image_cheng = sempler.image_return()
         sempler.save_sample()
     except:
-        pass
+        print(f"!!! {n} have not metadata - sample was not made")
 
 # viewImage(image_cheng)

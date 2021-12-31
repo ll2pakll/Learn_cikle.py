@@ -1,7 +1,5 @@
 from Help_fn.torch_model import *
 
-dir_path = 'd:\Work Area\Xseg_exstract\\frames\\'
-
 list_manager = Lists_manager(dir_path)
 marked_file_list = list_manager.get_target_list()
 file_list = list_manager.get_image_list()
@@ -19,7 +17,7 @@ for i, n in enumerate(file_list):
     if i % 50 == 0 and i:
         print(f'{i}/{len(file_list)}')
     if marked_file_list[i][1]:
-        markers = dflimg.get_dict()['target']
+        markers = dflimg.get_dict()['keypoints']
     else:
         markers = default_marker
     inter_points.set_data(idx=i,
