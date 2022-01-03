@@ -59,7 +59,7 @@ class PointsCreator():
         if self.show_mod == 1:
             self.alpha = 0.4
             render_points = self.inter_points.get_points()
-        elif self.show_mod == 2 and not self.markers.any():
+        elif self.show_mod == 2:
             self.alpha = 0.5
             render_points = self.prd
         elif self.show_mod == 3:
