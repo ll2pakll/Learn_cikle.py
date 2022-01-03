@@ -73,7 +73,7 @@ class Lists_manager:
 
 
 class Inter_points:
-    default_marker = np.array([[0, 0]] * 4, np.int32)
+    default_marker = np.array([[0, 0]] * 5, np.int32)
     def __init__(self, idx, file_list, dir_path=dir_path, previous_idx=None, next_idx=None, marker=default_marker):
         self.dir_path = dir_path
         self.file_list = file_list

@@ -11,7 +11,7 @@ class PointsCreator():
         self.file_list = self.list_manager.get_image_list()
         self.len_file_list = self.list_manager.get_len_image_list()
         self.marked_file_list = self.list_manager.get_target_list()
-        self.default_marker = np.array([[0, 0]]*4, np.int32)
+        self.default_marker = np.array([[0, 0]]*5, np.int32)
         self.wnd_name = 'Main'
         #-----------------------------
         self.file_index = 0
@@ -55,7 +55,7 @@ class PointsCreator():
     def draw_pts(self):
         img = self.img.copy()
         overlay = img.copy()
-        colors = [[0, 255, 255], [255, 0, 0], [0, 0, 255], [0, 255, 0]]
+        colors = [[0, 255, 255], [255, 0, 0], [0, 0, 255], [0, 255, 0], [255, 0, 255]]
         if self.show_mod == 1:
             self.alpha = 0.4
             render_points = self.inter_points.get_points()
@@ -64,7 +64,10 @@ class PointsCreator():
             render_points = self.prd
         elif self.show_mod == 3:
             self.alpha = 0.5
-            render_points = self.prd_inter
+            try:
+                render_points = self.prd_inter
+            except:
+                render_points = self.default_marker
         else:
             self.alpha = 0.5
             render_points = self.markers
@@ -82,11 +85,11 @@ class PointsCreator():
                 self.show_mod = 0
             self.markers[self.marker_nmr] = [x, y]
             self.make_inf_bar()
-            self.marker_nmr = (self.marker_nmr + 1) % 4
+            self.marker_nmr = (self.marker_nmr + 1) % 5
 
     def keyboard_handler(self):
         self.key = cv2.waitKey(1)
-        if 48 < self.key < 53:
+        if 48 < self.key < 54:
             self.marker_nmr = (self.key-49)
         elif self.key in {1, 4, 97, 100}: # 1 = 'Ctrl+a', 4 = 'Ctrl+d', 97 = 'a', 100 = 'd'
             self.cheng_nmb_img()
@@ -109,6 +112,8 @@ class PointsCreator():
         self.markers = self.prd = self.default_marker.copy()
         try:
             self.markers = dflimg.get_dict()['keypoints']
+            if len(self.markers) != 5:
+                self.markers = np.append(self.markers, [[0, 0]], axis=0)
         except:
             pass
         try:
@@ -124,6 +129,8 @@ class PointsCreator():
         if self.markers.any():
             dflimg = DFLIMG.DFLJPG.load(self.img_path)
             meta = dflimg.get_dict()
+            if not self.markers[4].any():
+                self.markers[4] = (self.markers[1] + self.markers[2])/2
             try:
                 meta['keypoints'] = self.markers
             except:
